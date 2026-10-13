@@ -115,10 +115,12 @@ body.is-plain .plain .sec{background:var(--page-2);color:var(--ink);padding:28px
 .todo{background:#FBEFC9;color:#7A4E00;font-style:italic;font-size:.9em;padding:0 6px;border:1px dashed #A87400}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .slot{aspect-ratio:4/5;max-width:100%;background:#E3E4DA;border:1px solid #C9CBBE;display:flex;align-items:flex-end;padding:8px;font-style:italic;font-size:.85rem;color:var(--muted)}
+.mailmenu{position:fixed;z-index:40;min-width:220px;background:var(--page-2);color:var(--ink);border:1px solid var(--ink);border-radius:8px;box-shadow:0 14px 30px rgba(20,30,38,.28);padding:6px;display:grid;gap:2px}
+.mailmenu[hidden]{display:none}
+.mailmenu p{margin:4px 10px 6px;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mailmenu a,.mailmenu button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;border-radius:5px;background:transparent;color:var(--ink);text-decoration:none;font:inherit;font-size:.98rem;cursor:pointer}
+.mailmenu a:hover,.mailmenu button:hover,.mailmenu a:focus-visible,.mailmenu button:focus-visible{background:var(--guilloche)}
 .contact{display:grid;gap:10px}
-.email-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
-.copy{border:1px solid var(--ink);background:transparent;border-radius:999px;padding:1px 12px;font-size:.85rem;cursor:pointer}
-.copy:hover{background:var(--ink);color:var(--page-2)}
 .contact div{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px}
 
 @media (max-width:1000px){
@@ -145,7 +147,7 @@ body.is-plain .plain .sec{background:var(--page-2);color:var(--ink);padding:28px
     <h1>Eric Wu</h1>
     <p>Operations Research &amp; Engineering, Cornell University</p>
     <ul>
-      <li><a href="mailto:ehw54@cornell.edu">ehw54@cornell.edu</a></li>
+      <li><a href="mailto:ehw54@cornell.edu" data-mail aria-haspopup="menu">ehw54@cornell.edu</a></li>
       <li><a href="https://www.linkedin.com/in/eric-wu29" target="_blank" rel="noopener">LinkedIn</a></li>
       <li><a href="https://github.com/ewu29" target="_blank" rel="noopener">GitHub</a></li>
       <li><a href="resume.pdf" target="_blank" rel="noopener" data-resume="open">Resume</a></li>
@@ -303,7 +305,7 @@ body.is-plain .plain .sec{background:var(--page-2);color:var(--ink);padding:28px
   <section class="sec" id="contact" style="--dc:var(--s-contact)">
     <h2>Contact</h2><p class="kicker">Say hello</p>
     <div class="contact">
-      <div><span class="when">Email</span><span class="email-row"><a href="mailto:ehw54@cornell.edu">ehw54@cornell.edu</a><button type="button" class="copy" data-copy="ehw54@cornell.edu">Copy</button></span></div>
+      <div><span class="when">Email</span><a href="mailto:ehw54@cornell.edu" data-mail aria-haspopup="menu">ehw54@cornell.edu</a></div>
       <div><span class="when">LinkedIn</span><a href="https://www.linkedin.com/in/eric-wu29" target="_blank" rel="noopener">linkedin.com/in/eric-wu29</a></div>
       <div><span class="when">GitHub</span><a href="https://github.com/ewu29" target="_blank" rel="noopener">github.com/ewu29</a></div>
       <div><span class="when">Resume</span><a href="resume.pdf" download="Eric_Wu_Resume.pdf" data-resume="download">Download PDF</a></div>
@@ -374,14 +376,39 @@ body.is-plain .plain .sec{background:var(--page-2);color:var(--ink);padding:28px
   }catch(e){ /* falls back to resume.pdf next to this file */ }
 })();
 </script>
+<div class="mailmenu" id="mailmenu" role="menu" aria-label="Email Eric" hidden>
+  <p>Email ehw54@cornell.edu with</p>
+  <a role="menuitem" href="https://mail.google.com/mail/?view=cm&amp;fs=1&amp;to=ehw54@cornell.edu" target="_blank" rel="noopener">Gmail</a>
+  <a role="menuitem" href="https://outlook.office.com/mail/deeplink/compose?to=ehw54@cornell.edu" target="_blank" rel="noopener">Outlook</a>
+  <a role="menuitem" href="https://compose.mail.yahoo.com/?to=ehw54@cornell.edu" target="_blank" rel="noopener">Yahoo Mail</a>
+  <button role="menuitem" type="button" id="mailcopy">Copy address</button>
+</div>
 <script>
-document.querySelectorAll('.copy').forEach(function(b){
-  b.addEventListener('click',function(){
-    var t=b.dataset.copy, done=function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy';},1600);};
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){fallback();});}else fallback();
-    function fallback(){var r=document.createRange(),a=b.previousElementSibling;r.selectNodeContents(a);var sel=getSelection();sel.removeAllRanges();sel.addRange(r);try{document.execCommand('copy');done();}catch(e){b.textContent='Press Ctrl+C';}}
+(function(){
+  var menu=document.getElementById('mailmenu'), copyBtn=document.getElementById('mailcopy'), opener=null;
+  function place(a){
+    var r=a.getBoundingClientRect(); menu.hidden=false;
+    var w=menu.offsetWidth, h=menu.offsetHeight;
+    var x=Math.min(Math.max(8,r.left),innerWidth-w-8), y=r.bottom+6;
+    if(y+h>innerHeight-8) y=Math.max(8,r.top-h-6);
+    menu.style.left=x+'px'; menu.style.top=y+'px';
+  }
+  function open(a){ opener=a; copyBtn.textContent='Copy address'; place(a); a.setAttribute('aria-expanded','true'); menu.querySelector('a').focus(); }
+  function close(back){ if(menu.hidden) return; menu.hidden=true; if(opener){opener.setAttribute('aria-expanded','false'); if(back) opener.focus();} opener=null; }
+  document.querySelectorAll('[data-mail]').forEach(function(a){
+    a.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(opener===a) close(true); else open(a); });
   });
-});
+  menu.addEventListener('click',function(e){ e.stopPropagation(); if(e.target.tagName==='A') close(false); });
+  copyBtn.addEventListener('click',function(){
+    var done=function(){ copyBtn.textContent='Copied'; setTimeout(function(){close(true);},900); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText('ehw54@cornell.edu').then(done,function(){copyBtn.textContent='ehw54@cornell.edu';});
+    else copyBtn.textContent='ehw54@cornell.edu';
+  });
+  document.addEventListener('click',function(){ close(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&!menu.hidden){ e.stopImmediatePropagation(); close(true); } },true);
+  addEventListener('resize',function(){ close(false); });
+  addEventListener('scroll',function(){ close(false); },true);
+})();
 </script>
 </body>
 </html>
